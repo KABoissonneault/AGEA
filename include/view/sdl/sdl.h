@@ -1,7 +1,6 @@
 #pragma once
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_ttf.h>
+#include "SDL.h"
 
 #include <memory>
 
@@ -40,14 +39,4 @@ namespace hz::sdl {
     using unique_surface = std::unique_ptr<SDL_Surface, surface_delete>;
     using unique_window = std::unique_ptr<SDL_Window, window_delete>;
     using unique_renderer = std::unique_ptr<SDL_Renderer, renderer_delete>;
-
-    namespace ttf {
-        struct font_delete {
-            void operator()(TTF_Font* p) {
-                TTF_CloseFont(p);
-            }
-        };
-
-        using unique_font = std::unique_ptr<TTF_Font, font_delete>;
-    }
 }

@@ -1,4 +1,4 @@
-#include <SDL/SDL.h>
+#include "SDL.h"
 
 #include <cstdlib>
 #include <chrono>
@@ -31,27 +31,6 @@ namespace hz {
         using seconds = std::chrono::duration<double>;
         using milliseconds = std::chrono::duration<double, std::milli>;        
 
-        class render_resources {
-        public:
-            auto store_font(sdl::ttf::unique_font font, std::string_view font_handle) -> TTF_Font * {
-                auto const[inserted_element, inserted] = fonts.insert_or_assign(std::string(font_handle), std::move(font));
-                (void)inserted;
-                
-                enum { handle, resource };
-                return std::get<resource>(*inserted_element).get();
-            }
-
-            auto get_font(std::string_view font_name) const -> TTF_Font* {
-                enum{ handle, resource };
-                auto const it_found = fonts.find(font_name);
-                if(it_found == fonts.end()) { return nullptr; }
-                return std::get<resource>(*it_found).get();
-            }
-
-        private:
-            std::map<std::string, sdl::ttf::unique_font, std::less<void>> fonts;
-        };
-
         struct body_data {
             std::atomic<physics::body2d> value;
         };
@@ -66,7 +45,6 @@ namespace hz {
             std::vector<model::entity> model_entities;
             std::vector<std::shared_ptr<body_data>> model_body_data;
             std::vector<view_entity_t> view_entities;
-            render_resources resources;
         };
 
         class player_input {
@@ -276,11 +254,6 @@ namespace {
         }
         std::atexit(SDL_Quit);
 
-        if(auto const error = TTF_Init(); error < 0) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize TTF: %s", SDL_GetError());
-            return error;
-        }
-        std::atexit(TTF_Quit);
         return {};
     }
 
