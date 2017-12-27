@@ -138,9 +138,7 @@ namespace hz {
         void update_entities(view<model::entity> model_entities, view<std::shared_ptr<body_data>> body_data, input::event_state_t const& input, physics::seconds dt) {
             for(auto & entity : model_entities) {
                 for(auto & component : entity.components) {
-                    if(component.has_update()) {
-                        component.on_update(entity, input, dt);
-                    }
+                    component.on_update(entity, input, dt);
                 }
                 entity.body = physics::integrate(entity.body, dt);
                 entity.body.acceleration = physics::acceleration2d();

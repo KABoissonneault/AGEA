@@ -13,19 +13,15 @@ namespace hz::model {
 
     class component {
     public:
-        template<typename InputT>
-        component(InputT input)
-            : update_function(get_update(input))
-            , component_data(std::move(input))
+        template<typename InputT, typename = std::enable_if_t<!std::is_same<std::decay_t<InputT>, component>::value>>
+        component(InputT&& input)
+            : component_data(std::forward<InputT>(input))
             , name(typeid(InputT).name()) {
 
         }
 
-        auto has_update() const noexcept -> bool {
-            return update_function != nullptr;
-        }
         void on_update(entity & entity, input::event_state_t const& input, physics::seconds dt) {
-            (*update_function)(component_data, entity, input, dt);
+            component_data->on_update(entity, input, dt);
         }
 
         auto get_name() const noexcept -> std::string_view {
@@ -33,45 +29,91 @@ namespace hz::model {
         }
 
     private:
-        template<typename T>
-        using update_method_event_seconds_t = decltype(std::declval<T>().on_update(std::declval<entity&>(), std::declval<input::event_state_t>(), std::declval<seconds>()));
+        class component_interface {
+        public:
+            virtual auto clone() -> std::unique_ptr<component_interface> = 0;
+            virtual void on_update(entity & entity, input::event_state_t const& input, physics::seconds dt) = 0;
+        };
 
         template<typename T>
-        using update_method_event_t = decltype(std::declval<T>().on_update(std::declval<entity&>(), std::declval<input::event_state_t>()));
+        class component_impl : public component_interface {
+        public:
+            template<typename... U>
+            component_impl(U&&... input)
+                : data(std::forward<U>(input)...) {
 
-        template<typename T>
-        using update_method_seconds_t = decltype(std::declval<T>().on_update(std::declval<entity&>(), std::declval<physics::seconds>()));
-
-        template<typename T>
-        using update_method_empty_t = decltype(std::declval<T>().on_update(std::declval<entity&>()));
-
-        using on_update_t = void(std::any & data, entity & entity, input::event_state_t const& input, physics::seconds dt);
-
-        template<typename InputT>
-        auto get_update(InputT const&) -> on_update_t* {
-            if constexpr(meta::is_detected<update_method_event_seconds_t, InputT>::value) {
-                return [] (std::any & data, entity & entity, input::event_state_t const& input, seconds dt) {
-                    std::any_cast<InputT&>(data).on_update(entity, input, dt);
-                };
-            } else if constexpr(meta::is_detected<update_method_event_t, InputT>::value) {
-                return [] (std::any & data, entity & entity, input::event_state_t const& input, seconds) {
-                    std::any_cast<InputT&>(data).on_update(entity, input);
-                };
-            } else if constexpr(meta::is_detected<update_method_seconds_t, InputT>::value) {
-                return [] (std::any & data, entity & entity, input::event_state_t const&, seconds dt) {
-                    std::any_cast<InputT&>(data).on_update(entity, dt);
-                };
-            } else if constexpr(meta::is_detected<update_method_empty_t, InputT>::value) {
-                return [] (std::any & data, entity & entity, input::event_state_t const&, seconds) {
-                    std::any_cast<InputT&>(data).on_update(entity);
-                };
-            } else {
-                return nullptr;
             }
-        }
 
-        on_update_t* update_function;
-        std::any component_data;
+            virtual auto clone() -> std::unique_ptr<component_interface> {
+                return std::make_unique<component_impl>(component_impl{data});
+            }
+
+            template<typename U>
+            using update_method_event_seconds_t = decltype(std::declval<U>().on_update(std::declval<entity&>(), std::declval<input::event_state_t>(), std::declval<seconds>()));
+            template<typename U>
+            using update_method_event_t = decltype(std::declval<U>().on_update(std::declval<entity&>(), std::declval<input::event_state_t>()));
+            template<typename U>
+            using update_method_seconds_t = decltype(std::declval<U>().on_update(std::declval<entity&>(), std::declval<physics::seconds>()));
+            template<typename U>
+            using update_method_empty_t = decltype(std::declval<U>().on_update(std::declval<entity&>()));
+
+            virtual void on_update(entity & e, input::event_state_t const& input, physics::seconds dt) override {
+                if constexpr(meta::is_detected<update_method_event_seconds_t, T>::value) {
+                    data.on_update(e, input, dt);
+                } else if constexpr(meta::is_detected<update_method_event_t, T>::value) {
+                    data.on_update(e, input);
+                } else if constexpr(meta::is_detected<update_method_seconds_t, T>::value) {
+                    data.on_update(e, dt);
+                } else if constexpr(meta::is_detected<update_method_empty_t, T>::value) {
+                    data.on_update(e);
+                }
+            }
+
+        private:
+            T data;
+        };
+
+        class component_holder {
+        public:
+            component_holder() = default;
+            component_holder(component_holder const& other)
+                : component_data(other.component_data->clone()) {
+
+            }
+            component_holder(component_holder && other)
+                : component_data(std::move(other.component_data)) {
+
+            }
+            auto operator=(component_holder const& other) -> component_holder & {
+                component_data = other.component_data->clone();
+                return *this;
+            }
+            auto operator=(component_holder && other) -> component_holder & {
+                component_data = std::move(other.component_data);
+                return *this;
+            }
+            ~component_holder() = default;
+
+            template<typename InputT>
+            component_holder(InputT&& input) 
+                : component_data(make_component_data(std::forward<InputT>(input))){
+
+            }
+            
+            auto operator->() -> component_interface* {
+                return component_data.get();
+            }
+        private:
+            template<typename InputT>
+            static auto make_component_data(InputT&& input) -> std::unique_ptr<component_interface> {
+                using impl = component_impl<std::decay_t<InputT>>;
+                return std::make_unique<impl>(std::forward<InputT>(input));
+            }
+
+            std::unique_ptr<component_interface> component_data;
+        };
+
+        component_holder component_data;
         std::string_view name;
     };
 
