@@ -17,6 +17,7 @@
 #include "meta/detected.h"
 #include "view/sdl/sdl.h"
 #include "model/entity.h"
+#include "model/world.h"
 
 namespace hz {
     namespace {
@@ -34,7 +35,7 @@ namespace hz {
         };
 
         struct game_model {
-            std::vector<model::entity> model_entities;
+            model::world model;
             std::vector<std::shared_ptr<body_data>> model_body_data;
             std::vector<view_entity_t> view_entities;
         };
@@ -111,9 +112,9 @@ namespace hz {
         }
 
         auto init_entities(SDL_Renderer & renderer) -> tl::expected<game_model, int> {
-            auto model_entities = std::vector<model::entity>(1);
-            model_entities[0].components.push_back(gravity_component());
-            model_entities[0].components.push_back(player_input());
+            auto test_entity = model::entity();
+            test_entity.components.push_back(gravity_component());
+            test_entity.components.push_back(player_input());
 
             auto entity_data = std::make_shared<body_data>();
 
@@ -124,7 +125,7 @@ namespace hz {
             auto view_entities = std::vector<view_entity_t>(1);
             view_entities[0] = {std::move(texture).value(), entity_data};
 
-            return game_model{std::move(model_entities), {entity_data}, std::move(view_entities)};
+            return game_model{model::world{}.add_entity(std::move(test_entity)), {entity_data}, std::move(view_entities)};
         }
 
         void update_entities(range::contiguous_view<model::entity> model_entities, range::contiguous_view<std::shared_ptr<body_data>> body_data, input::event_state_t const& input, physics::seconds dt) {
@@ -227,7 +228,7 @@ namespace hz {
                 }
 
                 while(frame_buffer > frame_duration) {
-                    update_entities(model.model_entities, model.model_body_data, event_state, frame_duration);
+                    update_entities(model.model.get_entities(), model.model_body_data, event_state, frame_duration);
                     frame_buffer -= frame_duration;
                 }
 

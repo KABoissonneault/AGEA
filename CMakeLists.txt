@@ -18,6 +18,7 @@ set(AGEA_INCLUDE
 	include/math/vector.h
 	include/meta/detected.h
 	include/model/entity.h
+	include/model/world.h
 	include/physics/body.h
 	include/physics/time.h
 	include/view/sdl/sdl.h
