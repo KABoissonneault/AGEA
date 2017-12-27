@@ -102,13 +102,29 @@ namespace hz {
             return texture;
         }
 
+        auto generate_white_texture(SDL_Renderer& renderer, int w, int h)-> tl::expected<sdl::unique_texture, int> {
+            auto texture = sdl::unique_texture(SDL_CreateTexture(&renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STATIC, w, h));
+            if(!texture) {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create texture: %s", SDL_GetError());
+                return tl::make_unexpected(-1);
+            }
+
+            auto const pixel_data = std::vector<uint32_t>(w*h, 0xFFFFFFFF);
+            if(auto const error = SDL_UpdateTexture(texture.get(), nullptr, std::data(pixel_data), w*sizeof(uint32_t)); error < 0) {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't update texture: %s", SDL_GetError());
+                return tl::make_unexpected(error);
+            }
+
+            return texture;
+        }
+
         auto init_entities(SDL_Renderer & renderer) -> tl::expected<game_model, int> {
             auto model_entities = std::vector<model::entity>(1);
             model_entities[0].components.push_back(gravity_component());
 
             auto entity_data = std::make_shared<body_data>();
 
-            auto texture = load_texture(renderer, "assets/white.bmp");
+            auto texture = generate_white_texture(renderer, 32, 32);
             if(!texture) {
                 return tl::make_unexpected(texture.error());
             }
