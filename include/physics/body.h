@@ -81,7 +81,7 @@ namespace hz::physics {
 
     struct force2d {
         force2d() = default;
-        constexpr explicit force2d(double x, double y) noexcept : value{ x,y } { }
+        constexpr force2d(double x, double y) noexcept : value{ x,y } { }
         constexpr explicit force2d(vector2d value) noexcept : value(value) { }
             
         constexpr auto operator+(force2d other) const noexcept -> force2d {
@@ -104,6 +104,11 @@ namespace hz::physics {
         acceleration2d acceleration = {};
         vector2d dimension = { 1.0, 1.0 };
         weight weight = { 1.0 };
+
+        auto add_force(force2d f) -> body2d & {
+            acceleration += f / weight;
+            return *this;
+        }
     };
 
     template<typename T, typename U> 
@@ -115,11 +120,6 @@ namespace hz::physics {
         b.velocity = rk1(b.velocity, b.acceleration, dt / 2);
         b.position = rk1(b.position, b.velocity, dt);
         b.velocity = rk1(b.velocity, b.acceleration, dt / 2);
-        return b;
-    }
-
-    constexpr auto add_force(body2d b, force2d f) -> body2d {
-        b.acceleration += f / b.weight;
         return b;
     }
 }

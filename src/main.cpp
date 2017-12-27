@@ -67,10 +67,10 @@ namespace hz {
                 if(down_pressed) force += physics::force2d(0, -input_force);
                 if(left_pressed) force += physics::force2d(-input_force, 0);
                 if(right_pressed) force += physics::force2d(input_force, 0);
-                entity.body = physics::add_force(entity.body, force);
+                entity.body.add_force(force);
             }
 
-            double input_force = 1.0;
+            double input_force = 20.0;
 
         private:
             bool up_pressed = false;
@@ -82,7 +82,7 @@ namespace hz {
         class gravity_component {
         public:
             void on_update(model::entity & entity) {
-                entity.body = physics::add_force(entity.body, physics::force2d(0, -entity.body.weight.value * 10.0));
+                entity.body.add_force({0, -entity.body.weight.value * 10.0});
             }
         };
         
