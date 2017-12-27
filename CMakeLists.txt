@@ -11,6 +11,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(AGEA_SRC src/main.cpp)
 set(AGEA_INCLUDE
+	include/common/range/view.h
 	include/functional/functional.h
 	include/input/event.h
 	include/math/integration.h
@@ -24,6 +25,7 @@ set(AGEA_INCLUDE
 
 add_executable(AGEA ${AGEA_SRC} ${AGEA_INCLUDE})
 
+source_group(include\\common\\range REGULAR_EXPRESSION include/common/range/*)
 source_group(include\\functional REGULAR_EXPRESSION include/functional/*)
 source_group(include\\input REGULAR_EXPRESSION include/input/*)
 source_group(include\\math REGULAR_EXPRESSION include/math/*)

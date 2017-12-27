@@ -20,14 +20,6 @@
 
 namespace hz {
     namespace {
-        template<typename T>
-        using view = gsl::span<T>;
-
-        template<typename Container>
-        auto make_view(Container && c) noexcept -> view<std::remove_reference_t<decltype(*std::forward<Container>(c).data())>> {
-            return gsl::make_span(std::forward<Container>(c));
-        }
-
         using seconds = std::chrono::duration<double>;
         using milliseconds = std::chrono::duration<double, std::milli>;        
 
@@ -135,7 +127,7 @@ namespace hz {
             return game_model{std::move(model_entities), {entity_data}, std::move(view_entities)};
         }
 
-        void update_entities(view<model::entity> model_entities, view<std::shared_ptr<body_data>> body_data, input::event_state_t const& input, physics::seconds dt) {
+        void update_entities(range::contiguous_view<model::entity> model_entities, range::contiguous_view<std::shared_ptr<body_data>> body_data, input::event_state_t const& input, physics::seconds dt) {
             for(auto & entity : model_entities) {
                 for(auto & component : entity.components) {
                     component.on_update(entity, input, dt);
