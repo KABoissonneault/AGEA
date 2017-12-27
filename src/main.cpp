@@ -1,12 +1,9 @@
-#include "SDL.h"
-
 #include <cstdlib>
 #include <chrono>
 #include <thread>
 #include <string_view>
 #include <algorithm>
 #include <optional>
-#include <map>
 #include <atomic>
 
 #include <expected.hpp>
@@ -15,14 +12,16 @@
 #include "physics/body.h"
 #include "input/event.h"
 #include "meta/detected.h"
-#include "view/sdl/sdl.h"
 #include "model/entity.h"
 #include "model/world.h"
 
+#include <SDL.h>
+#include "view/sdl/sdl.h"
 namespace hz {
     namespace {
         using seconds = std::chrono::duration<double>;
         using milliseconds = std::chrono::duration<double, std::milli>;        
+        namespace sdl = view::sdl;
 
         struct body_data {
             std::atomic<physics::body2d> value;
@@ -255,21 +254,21 @@ namespace hz {
 namespace {
     namespace sdl = hz::sdl;
 
-    auto sdl_init() -> int {
+    auto sdl_init() -> tl::expected<tl::monostate,int> {
         if(auto const error = SDL_Init(0); error < 0) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SDL: %s", SDL_GetError());
-            return error;
+            SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "Unable to initialize SDL: %s", SDL_GetError());
+            return tl::make_unexpected(error);
         }
         std::atexit(SDL_Quit);
 
         return {};
     }
 
-    auto sdl_sub_init() -> int {
+    auto sdl_sub_init() -> tl::expected<tl::monostate, int> {
         auto const error = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
         if(error < 0) {
             SDL_Log("Unable to initialize SDL_video or SDL_events: %s", SDL_GetError());
-            return error;
+            return tl::make_unexpected(error);
         }
         std::atexit([] { SDL_QuitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS); });
         return {};
@@ -291,12 +290,12 @@ namespace {
 
 auto main(int argc, char* argv[]) -> int {
     (void)argc, (void)argv;
-    if(auto const error = sdl_init(); error < 0) {
-        return error;
+    if(auto const result = sdl_init(); !result) {
+        return result.error();
     }
 
-    if(auto const error = sdl_sub_init(); error < 0) {
-        return error;
+    if(auto const result = sdl_sub_init(); !result) {
+        return result.error();
     }
 
     auto result = make_window_and_renderer();

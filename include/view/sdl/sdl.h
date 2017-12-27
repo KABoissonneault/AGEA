@@ -1,10 +1,10 @@
 #pragma once
 
-#include "SDL.h"
+#include <SDL.h>
 
 #include <memory>
 
-namespace hz::sdl {
+namespace hz::view::sdl {
     struct texture_delete {
         void operator()(SDL_Texture* p) {
             if (p != nullptr) {
