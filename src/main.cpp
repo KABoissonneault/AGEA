@@ -121,6 +121,7 @@ namespace hz {
         auto init_entities(SDL_Renderer & renderer) -> tl::expected<game_model, int> {
             auto model_entities = std::vector<model::entity>(1);
             model_entities[0].components.push_back(gravity_component());
+            model_entities[0].components.push_back(player_input());
 
             auto entity_data = std::make_shared<body_data>();
 
