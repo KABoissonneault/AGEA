@@ -11,10 +11,10 @@
 namespace hz::model {
     class entity;
 
-    class component {
+    class entity_component {
     public:
-        template<typename InputT, typename = std::enable_if_t<!std::is_same<std::decay_t<InputT>, component>::value>>
-        component(InputT&& input)
+        template<typename InputT, typename = std::enable_if_t<!std::is_same<std::decay_t<InputT>, entity_component>::value>>
+        entity_component(InputT&& input)
             : component_data(std::forward<InputT>(input))
             , name(typeid(InputT).name()) {
 
@@ -122,7 +122,7 @@ namespace hz::model {
     class entity {
     public:
         physics::body2d body;
-        std::vector<component> components;
+        std::vector<entity_component> components;
         id id;
     };
 }
