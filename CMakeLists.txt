@@ -4,8 +4,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 cmake_minimum_required (VERSION 3.1)
 
 set (CMAKE_CXX_STANDARD 17)
-set (AGEA_VERSION_MAJOR 0)
-set (AGEA_VERSION_MINOR 1)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -47,3 +45,5 @@ get_filename_component(SDL2_LIBRARY_PATH ${SDL2_FIRST_LIB} DIRECTORY)
 add_custom_command(TARGET AGEA PRE_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		"${SDL2_LIBRARY_PATH}/sdl2.dll" "${SDL2_LIBRARY_PATH}/sdl2d.dll" $<TARGET_FILE_DIR:AGEA>)
+		
+add_subdirectory(test)
